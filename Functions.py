@@ -221,8 +221,10 @@ def averageIntensities(ListOfFiles, outputfilename):
 def creatTree(_StateFile, _qMax, _grid):
 
     input = GenerateInput.load_from_state(_StateFile)
-    input.state.DomainPreferences['GridSize'] = _grid
-    input.state.DomainPreferences['qMax'] = _qMax
+    input.state.DomainPreferences.grid_size = _grid
+    input.state.DomainPreferences.q_max = _qMax
+
+    input._create_x_vector()
 
     return input
 
@@ -238,7 +240,7 @@ def WriteFile(result, outputfile):
     new_file.close()
 
 
-def CalcPDB(Tree, api, _path, _name):
+def CalcPDB(Tree,Tree2, api, _path, _name):
 
     _name = _name[0:_name.index('.')]
 
@@ -253,7 +255,10 @@ def CalcPDB(Tree, api, _path, _name):
         os.makedirs(pathI)
 
     outputfile = pathI + "\\" + _name + '.out'
+
     Tree.state.Domain.Children[0].Children[0].use_grid = True
+    Tree2.state.Domain.Children[0].Children[0].use_grid = True
+
     result = api.generate(Tree)
     WriteFile(result, outputfile)
 
@@ -261,7 +266,18 @@ def CalcPDB(Tree, api, _path, _name):
 
     All_Amps = os.listdir(temp_Amp_dir)
     for i in All_Amps:
+        print('Moving file (1):' , i , ' to ', _name)
         shutil.move(temp_Amp_dir + "\\" + i, pathA + "\\" + _name + '.amp')
+    print(_name)
+
+    Tree2.state.Domain.Children[0].Children[0].filename = repr(pathA + "\\" + _name + '.amp').replace("'", "")
+    result2 = api.generate(Tree2)
+
+    All_Amps = os.listdir(temp_Amp_dir)
+    for i in All_Amps:
+        os.remove(temp_Amp_dir + "\\" + i)
+
+    WriteFile(result2, outputfile)
 
     return outputfile, pathA + "\\" + _name + '.amp'
 
@@ -290,10 +306,10 @@ def CalculateIntensityFromAmplitud(SubAveragedAmplitudeName, AmpTree, api):
 
 
 
-def ExpotrIntensity(signal, Q):
+def ExpotrIntensity(signal, Q, filename):
     # TODO construct a header stream
 
-    FinalFile = open("Subtracted averaged intensity.out",'w+')
+    FinalFile = open(filename,'w+')
     FinalFile.write("q [nm^-1]" + "\t" + "Intensity [A.U]" + "\n")
 
     for i in range(0,len(signal)):

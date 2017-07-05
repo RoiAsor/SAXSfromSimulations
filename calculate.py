@@ -35,8 +35,11 @@ def main():
                              '(move to geometric center, add formal charges, remove lone pairs of the water force field)')
     parser.add_argument(dest='qMax', metavar='<qMax>', type=float,
                         help='The max q value you wish to calculate, right now the maximum q range is 10')
-    parser.add_argument(dest='Grid', metavar='<Grid size>', type=float,
+    parser.add_argument(dest='Grid', metavar='<Grid size>', type=int,
                         help='The amplitude grid size.')
+
+    parser.add_argument(dest='outputFilename', metavar='<output Filename>', type=str,
+                        help='The output file name.')
     args = parser.parse_args()
 
     # Chacking the arguments for the program
@@ -123,7 +126,8 @@ def main():
             for i in errorList:
                 print(os.path.split(i)[1])
             print("Do you wish to continue the calculation? (yes/no)")
-            ans = input()
+            #ans = input()
+            ans = "yes"
             errorcount = 0
             while ans != "no" and ans != "yes" and errorcount < 3:
                 print("Please Enter yes or no.")
@@ -173,6 +177,8 @@ def main():
     api = LocalRunner()
     PDBTree = Funcs.creatTree(StateFile,args.qMax, args.Grid)
 
+    StateFile2 = "AmpCalculationVegas.state"
+    PDBTree2 = Funcs.creatTree(StateFile2, args.qMax, args.Grid)
 
     # Calculate the intensity and amplitude for each frame
     print("Starting the calculation for the frames...")
@@ -182,7 +188,7 @@ def main():
     for name in FinalProteinList:
         name_path, basename = os.path.split(name)
         PDBTree.state.Domain.Children[0].Children[0].filename = repr(name).replace("'", "")
-        I, A = Funcs.CalcPDB(PDBTree, api, name_path, basename)
+        I, A = Funcs.CalcPDB(PDBTree,PDBTree2, api, name_path, basename)
         ListOfAmplitudeProtein.append(A)
         ListOfIntensityProtein.append(I)
 
@@ -192,11 +198,11 @@ def main():
     for name in FinalSolventList:
         name_path, basename = os.path.split(name)
         PDBTree.state.Domain.Children[0].Children[0].filename = repr(name).replace("'", "")
-        I, A = Funcs.CalcPDB(PDBTree, api, name_path, basename)
+        I, A = Funcs.CalcPDB(PDBTree,PDBTree2, api, name_path, basename)
         ListOfIntensitySolvent.append(I)
         ListOfAmplitudeSolvent.append(A)
 
-    print("The calculation is dine...")
+    print("The calculation is done...")
 
     #Calculates the averages
     print("Calculating the averages...")
@@ -228,7 +234,7 @@ def main():
     TotalIntensity = TotalIntensity + np.asarray(IntensityOfTheAve_AmplituseSolvent, dtype=float)
 
     #export result
-    Funcs.ExpotrIntensity(TotalIntensity, Q_vec_Protein)
+    Funcs.ExpotrIntensity(TotalIntensity, Q_vec_Protein, args.outputFilename)
 
     Funcs.DeleteFiles(args.delete, args.ProteinDir, args.SolventDir)
 

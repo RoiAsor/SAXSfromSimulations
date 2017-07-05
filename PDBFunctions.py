@@ -15,10 +15,13 @@ def SimToDplusFormat(name):
     for line in PDB:
         if (line[13:15] != 'MW'):
             if line.startswith("ATOM") or line.startswith("HETATM"):
-                if line[12:14] == 'NA' and line[18:20] == 'NA':
-                    line = line[0:len(line) - 1] + '1+' + '\n'
-                if line[12:14] == 'CL' and line[18:20] == 'CL':
-                    line = line[0:len(line) - 1] + '1-' + '\n'
+                if line[13:15] == 'NA' and line[18:20] == 'NA':
+                    line  = line[:76] + 'NA1+' + '\n'
+                elif line[13:15] == 'CL' and line[18:20] == 'CL':
+                    line = line[:76] + 'CL1-' + '\n'
+                else:
+
+                    line = line[:77] + line[13]  + line[78:]
             WriteF.write(line)
     WriteF.close()
 
@@ -444,14 +447,19 @@ def is_number(s):
 
 
 def stringcut(s,size):
-    s = str(s)
+    s = "%f" % s
     s = s[0:size+1]
     index_s = s.index('.')
     num_s = float(s)
     num_s = round(num_s, int(size-index_s-1))
-    num_s = str(num_s)
-    while len(num_s) < size:
-        num_s = num_s + '0'
+    num_s = '%f' % num_s
+    num_s = num_s[0:size]
+    if num_s.index('.'):
+        while len(num_s) < size:
+            num_s = num_s + '0'
+    else:
+        while len(num_s) < size:
+            num_s = num_s + ' '
     return num_s
 
 
