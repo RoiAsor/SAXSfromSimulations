@@ -1,5 +1,6 @@
 import os, math
 import numpy as np
+from string import digits
 
 def SimToDplusFormat(name):
     outputPath = os.path.dirname(name) + '\\D+Format\\'
@@ -15,18 +16,45 @@ def SimToDplusFormat(name):
     for line in PDB:
         if (line[13:15] != 'MW'):
             if line.startswith("ATOM") or line.startswith("HETATM"):
-                if line[13:15] == 'NA' and line[18:20] == 'NA':
+                type = Atomtype(line[12:16])
+                res = Atomtype(line[17:20])
+                if type == 'NA' and res == 'NA':
                     line  = line[:76] + 'NA1+' + '\n'
-                elif line[13:15] == 'CL' and line[18:20] == 'CL':
+                elif type == 'CL' and res == 'CL':
                     line = line[:76] + 'CL1-' + '\n'
-                else:
 
-                    line = line[:77] + line[13]  + line[78:]
+                else:
+                    if type.startswith("H"):
+                        if line.startswith("ATOM"):
+                            type = " H"
+                    elif type.startswith("C"):
+                        if line.startswith("ATOM"):
+                            type = " C"
+                    elif type.startswith("O"):
+                        if line.startswith("ATOM"):
+                            type = " O"
+                    elif type.startswith("N"):
+                        if line.startswith("ATOM") and res != "SOL":
+                            type = " N"
+                    elif type.startswith("S"):
+                        if line.startswith("ATOM") and res == "CYS":
+                            type = " S"
+                    if len(type) == 1:
+                        line = line[:76] + ' ' + type + line[78:]
+                    else:
+                        line = line[:76] + type + line[78:]
             WriteF.write(line)
     WriteF.close()
 
     return outputfilename
 
+def Atomtype(string):
+    new_string = string
+    remove_digits = str.maketrans('', '', digits)
+    new_string = string.translate(remove_digits)
+    new_string = new_string.strip()
+    #print("old string = ", string , "new string = ", new_string)
+    return new_string
 
 def PDBtoCOM(PDBname):
 
